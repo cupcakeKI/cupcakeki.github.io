@@ -1,3 +1,0 @@
-# Cupcakegalerie:
-
-Bild
