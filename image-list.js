@@ -70,4 +70,5 @@ const imageList = [
 "pixelart-cupcake-2025-10-11T10-23-37.png",
 "pixelart-cupcake-2025-10-11T10-25-23.png",
 "pixelart-cupcake-2025-10-11T10-27-02.png",
+"pixelart-cupcake-2025-10-11T10-28-43.png",
 ];
