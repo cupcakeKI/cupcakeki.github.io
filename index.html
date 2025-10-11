@@ -120,6 +120,13 @@
         .close:hover {
             color: #ff7664;
         }
+
+        .image-date {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -143,6 +150,61 @@
 
     <script src="image-list.js"></script>
     <script>
+        function extractDateFromFilename(filename) {
+            // Format: pixelart-cupcake-2025-10-11T08-50-00.png
+            const pattern = /(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})/;
+            
+            const match = filename.match(pattern);
+            if (match) {
+                const year = match[1];
+                const month = match[2];
+                const day = match[3];
+                let hour = parseInt(match[4]);
+                const minute = match[5];
+                const second = match[6];
+                
+                // 2 Stunden addieren
+                hour += 2;
+                
+                // Überlauf auf nächsten Tag handhaben
+                let adjustedDay = parseInt(day);
+                let adjustedMonth = parseInt(month);
+                let adjustedYear = parseInt(year);
+                
+                if (hour >= 24) {
+                    hour -= 24;
+                    adjustedDay += 1;
+                    
+                    // Tage pro Monat (vereinfacht)
+                    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                    
+                    // Schaltjahr berücksichtigen
+                    if (adjustedYear % 4 === 0 && (adjustedYear % 100 !== 0 || adjustedYear % 400 === 0)) {
+                        daysInMonth[1] = 29;
+                    }
+                    
+                    if (adjustedDay > daysInMonth[adjustedMonth - 1]) {
+                        adjustedDay = 1;
+                        adjustedMonth += 1;
+                        
+                        if (adjustedMonth > 12) {
+                            adjustedMonth = 1;
+                            adjustedYear += 1;
+                        }
+                    }
+                }
+                
+                // Formatierung mit führenden Nullen
+                const formattedDay = adjustedDay.toString().padStart(2, '0');
+                const formattedMonth = adjustedMonth.toString().padStart(2, '0');
+                const formattedHour = hour.toString().padStart(2, '0');
+                
+                return `${formattedDay}.${formattedMonth}.${adjustedYear} ${formattedHour}:${minute}:${second}`;
+            }
+            
+            return 'Kein Datum im Dateinamen gefunden';
+        }
+
         async function loadImages() {
             const gallery = document.getElementById('gallery');
             const assetsPath = './assets/';
@@ -155,23 +217,38 @@
                 return;
             }
             
-            for (const fileName of imageList) {
+            // Umgekehrte Reihenfolge der Bilder
+            const reversedImageList = [...imageList].reverse();
+            
+            for (const fileName of reversedImageList) {
                 if (fileName.trim() === '') continue;
+                
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
                 
                 const img = document.createElement('img');
                 img.src = assetsPath + fileName;
                 img.alt = fileName;
                 img.title = fileName;
                 
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'image-date';
+                
+                // Datum aus Dateinamen extrahieren
+                const extractedDate = extractDateFromFilename(fileName);
+                dateDiv.textContent = extractedDate;
+                
                 // Lightbox functionality
                 img.onclick = () => openLightbox(img.src);
                 
                 img.onerror = () => {
                     console.log(`Bild ${fileName} konnte nicht geladen werden`);
-                    img.remove();
+                    galleryItem.remove();
                 };
                 
-                gallery.appendChild(img);
+                galleryItem.appendChild(img);
+                galleryItem.appendChild(dateDiv);
+                gallery.appendChild(galleryItem);
             }
             
             // Falls keine Bilder geladen werden konnten
