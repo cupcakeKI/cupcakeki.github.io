@@ -27,7 +27,8 @@ jobs:
         mkdir -p assets/thumbs
         
         # Thumbnails erstellen (300x300px, quadratisch)
-        for img in assets/*.{jpg,jpeg,png,gif,webp} 2>/dev/null; do
+        shopt -s nullglob
+        for img in assets/*.jpg assets/*.jpeg assets/*.png assets/*.gif assets/*.webp; do
           if [ -f "$img" ]; then
             filename=$(basename "$img")
             convert "$img" -resize 300x300^ -gravity center -extent 300x300 "assets/thumbs/thumb_$filename"
@@ -45,5 +46,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add assets/thumbs/ image-list.js
-        git diff --staged --quiet || git commit -m "Auto-update gallery and thumbnails [skip ci]"
+        git diff --staged --quit || git commit -m "Auto-update gallery and thumbnails [skip ci]"
         git push
