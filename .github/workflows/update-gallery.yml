@@ -1,4 +1,4 @@
-name: Update Gallery
+name: Update Gallery with Thumbnails
 
 on:
   push:
@@ -18,17 +18,32 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Generate image list
+    - name: Install ImageMagick
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
+    
+    - name: Create thumbnails and generate image list
       run: |
         mkdir -p assets
+        mkdir -p assets/thumbs
+        
+        # Thumbnails erstellen (300x300px, quadratisch)
+        for img in assets/*.{jpg,jpeg,png,gif,webp} 2>/dev/null; do
+          if [ -f "$img" ]; then
+            filename=$(basename "$img")
+            convert "$img" -resize 300x300^ -gravity center -extent 300x300 "assets/thumbs/thumb_$filename"
+            echo "Thumbnail erstellt für: $filename"
+          fi
+        done
+        
+        # Bilderliste generieren
         echo "const imageList = [" > image-list.js
-        find assets -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.svg" \) -exec basename {} \; | sort | sed 's/.*/"&",/' >> image-list.js
+        find assets -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.svg" \) -exec basename {} \; | sort | sed 's/.*/"&",/' >> image-list.js
         echo "];" >> image-list.js
         
     - name: Commit changes
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add image-list.js
-        git diff --staged --quiet || git commit -m "Auto-update image list [skip ci]"
+        git add assets/thumbs/ image-list.js
+        git diff --staged --quiet || git commit -m "Auto-update gallery and thumbnails [skip ci]"
         git push
